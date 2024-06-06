@@ -727,7 +727,7 @@ class Node:
             The Player associated with this guild ID. Could be None if no :class:`~wavelink.Player` exists
             for this guild.
         """
-        return self._players.get(guild_id, None)
+        return self._players.get(guild_id, None) # type: ignore
 
 
 class Pool:

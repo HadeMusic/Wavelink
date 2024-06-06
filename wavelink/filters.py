@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, TypedDict , Any
 
 
 if TYPE_CHECKING:
@@ -56,6 +56,7 @@ __all__ = (
     "Distortion",
     "ChannelMix",
     "LowPass",
+    "PluginFilter",
 )
 
 
@@ -70,7 +71,9 @@ class FiltersOptions(TypedDict, total=False):
     distortion: Distortion
     channel_mix: ChannelMix
     low_pass: LowPass
+    plugin_filter : PluginFilter
     reset: bool
+    
 
 
 class EqualizerOptions(TypedDict):
@@ -416,6 +419,36 @@ class Rotation:
         return f"<Rotation: {self._payload}>"
 
 
+class PluginFilter:
+    """The PluginFilter Filter classs.
+
+    You node have proper plugins installed to use these filters.
+    """
+    
+    def __init__(self , payload : dict[str , Any]) -> None:
+        self._payload = payload
+        
+    
+    def set(self , options : dict[str , Any]) -> Self:
+        self._payload = options    
+        return self
+    
+    def reset(self) -> Self:
+        self._payload = {}
+        return self
+    
+    @property
+    def payload(self) -> dict[str , Any]:
+        return self._payload.copy()
+    
+    def __str__(self) -> str:
+        return "PluginFilter"
+
+    def __repr__(self) -> str:
+        return f"<PluginFilter: {self._payload}>"
+
+            
+
 class Distortion:
     """The Distortion Filter class.
 
@@ -659,6 +692,7 @@ class Filters:
         self._distortion: Distortion = Distortion({})
         self._channel_mix: ChannelMix = ChannelMix({})
         self._low_pass: LowPass = LowPass({})
+        self._plugin_filter : PluginFilter = PluginFilter({})
 
         if data:
             self._create_from(data)
@@ -674,6 +708,7 @@ class Filters:
         self._distortion = Distortion(data.get("distortion", {}))
         self._channel_mix = ChannelMix(data.get("channelMix", {}))
         self._low_pass = LowPass(data.get("lowPass", {}))
+        self._plugin_filter = PluginFilter(data.get("pluginFilters", {}))
 
     def _set_with_reset(self, filters: FiltersOptions) -> None:
         self._volume = filters.get("volume")
@@ -686,6 +721,7 @@ class Filters:
         self._distortion = filters.get("distortion", Distortion({}))
         self._channel_mix = filters.get("channel_mix", ChannelMix({}))
         self._low_pass = filters.get("low_pass", LowPass({}))
+        self._plugin_filter = filters.get("plugin_filter" , PluginFilter({}))
 
     def set_filters(self, **filters: Unpack[FiltersOptions]) -> None:
         """Set multiple filters at once to a standalone Filter object.
@@ -732,6 +768,7 @@ class Filters:
         self._distortion = filters.get("distortion", self._distortion)
         self._channel_mix = filters.get("channel_mix", self._channel_mix)
         self._low_pass = filters.get("low_pass", self._low_pass)
+        self._plugin_filter = filters.get("plugin_filter" , self._plugin_filter)
 
     def _reset(self) -> None:
         self._volume = None
@@ -744,6 +781,7 @@ class Filters:
         self._distortion = Distortion({})
         self._channel_mix = ChannelMix({})
         self._low_pass = LowPass({})
+        self._plugin_filter = PluginFilter({})
 
     def reset(self) -> None:
         """Method which resets this object to an original state.
@@ -843,6 +881,11 @@ class Filters:
     def low_pass(self) -> LowPass:
         """Property which returns the :class:`~wavelink.LowPass` filter associated with this Filters payload."""
         return self._low_pass
+    
+    @property
+    def plugin_filter(self) -> PluginFilter:
+        """Property which returns the :class:`~wavelink.PluginFilter` filter associated with this Filters payload."""
+        return self._plugin_filter
 
     def __call__(self) -> FilterPayload:
         payload: FilterPayload = {
@@ -856,6 +899,7 @@ class Filters:
             "distortion": self._distortion._payload,
             "channelMix": self._channel_mix._payload,
             "lowPass": self._low_pass._payload,
+            "pluginFilters" : self._plugin_filter._payload
         }
 
         for key, value in payload.copy().items():
