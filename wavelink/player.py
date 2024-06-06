@@ -29,7 +29,7 @@ import logging
 import random
 import time
 from typing import TYPE_CHECKING, Any, TypeAlias
-
+from aiohttp import ClientError
 import async_timeout
 import discord
 from discord.abc import Connectable
@@ -617,8 +617,8 @@ class Player(discord.VoiceProtocol):
         data: VoiceState = self._voice_state["voice"]
 
         try:
-            session_id: str = data["session_id"]
-            token: str = data["token"]
+            session_id: str = data["session_id"] # type: ignore
+            token: str = data["token"] # type: ignore
         except KeyError:
             return
 
@@ -1030,6 +1030,56 @@ class Player(discord.VoiceProtocol):
         await self.node._update_player(self.guild.id, data=request, replace=True)
 
         return old
+    
+    async def _change_node(self , node : Node) -> None:
+        """Transfer a player from one node to another node.
+        
+        Parameters
+        ----------
+        node : Node
+            Node where you want to transfer the player from current node.
+            
+        Returns
+        -------
+        :class: None
+            This method doesn't return any thing    
+        
+        """
+        
+        
+        assert self.guild is not None
+        old = self._node
+        self._node = node
+        last_position = self.position
+        
+        
+        try:
+            await self._destroy()
+        except (LavalinkException , ClientError):
+            pass
+            
+        old.players.pop(self.guild.id , None)
+        node.players[self.guild.id] = self
+        
+        if self._voice_state:
+            await self._dispatch_voice_update()
+        
+        if self._current:
+            end : int | None = None
+            request: RequestPayload = {
+            "track": {"encoded": self._current.encoded, "userData": dict(self._current.extras)},
+            "volume": self._volume,
+            "position": last_position,
+            "endTime": end,
+            "paused": self._paused,
+            "filters": self._filters(),
+        }
+            self._last_position = last_position
+            await self._node._update_player(self.guild.id , data=request , replace=True)  
+        self._last_update = time.monotonic_ns()
+        self.client.dispatch('wavelink_node_swap' , old , node)    
+            
+        
 
     def _invalidate(self) -> None:
         self._connected = False

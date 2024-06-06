@@ -142,6 +142,7 @@ class Node:
         client: discord.Client | None = None,
         resume_timeout: int = 60,
         inactive_player_timeout: int | None = 300,
+        session_id : str  | None = None
     ) -> None:
         self._identifier = identifier or secrets.token_urlsafe(12)
         self._uri = uri.removesuffix("/")
@@ -154,7 +155,7 @@ class Node:
 
         self._status: NodeStatus = NodeStatus.DISCONNECTED
         self._has_closed: bool = False
-        self._session_id: str | None = None
+        self._session_id: str | None = session_id
 
         self._players: dict[int, Player] = {}
         self._total_player_count: int | None = None
