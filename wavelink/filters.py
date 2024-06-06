@@ -422,7 +422,7 @@ class Rotation:
 class PluginFilter:
     """The PluginFilter Filter classs.
 
-    You node have proper plugins installed to use these filters.
+    Node must have proper plugins installed to use these filters.
     """
     
     def __init__(self , payload : dict[str , Any]) -> None:
