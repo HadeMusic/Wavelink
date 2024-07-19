@@ -28,7 +28,7 @@ import asyncio
 import logging
 import random
 import time
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias , Optional
 
 import async_timeout
 import discord
@@ -55,6 +55,8 @@ from .payloads import (
 from .queue import Queue
 from .tracks import Playable, Playlist
 
+from aiohttp import ClientError 
+from asyncio import TimeoutError
 
 if TYPE_CHECKING:
     from collections import deque
@@ -1120,3 +1122,72 @@ class Player(discord.VoiceProtocol):
         if self.__previous_seeds.full():
             self.__previous_seeds.get_nowait()
         self.__previous_seeds.put_nowait(seed)
+    
+    async def change_node(self , identifier : Optional[str] = None) -> None:
+        """|coro|
+
+        Change the players current :class:`wavelink.node.Node`. Useful when a Node fails or when changing regions.
+        The change Node behaviour allows for near seamless fallbacks and changeovers to occur.
+
+        Parameters
+        ------------
+        Optional[identifier: str]
+            An optional Node identifier to change to. If None, the next best available Node will be found.
+        """
+        
+        assert self.guild
+        
+        if identifier:
+            node = wavelink.Pool.get_node(identifier)
+        else:   
+            node = wavelink.Pool.get_node() 
+            
+        if node == self.node:
+            raise wavelink.WavelinkException("Node identifiers must not be the same while changing.")
+        
+        
+        last_position = self.position
+        old = self.node 
+        try:
+            del old.players[self.guild.id]
+        except KeyError:
+            pass
+        try:
+            await self.node._destroy_player(self.guild.id)
+        except (ClientError , TimeoutError , wavelink.LavalinkException):
+            pass
+        
+        self._node = node
+        
+        self._node.players[int(self.guild.id)] = self
+        
+        if self._voice_state:
+            await self._dispatch_voice_update()
+            
+        if self.current:
+            request: RequestPayload = {
+            "track": {"encoded": self._current.encoded, "userData": dict(self._current.extras)}, # type: ignore
+            "volume": self._volume,
+            "position": last_position,
+            "endTime": None,
+            "paused": self._paused,
+            "filters": self._filters(),
+        }    
+            
+            self._last_position = last_position
+            await self.node._update_player(self.guild.id , data=request , replace=True)
+        
+        self._last_update = time.monotonic_ns()    
+        
+        self.client.dispatch('node_change', old , node)
+            
+        
+            
+            
+            
+        
+           
+   
+                
+            
+            
