@@ -751,8 +751,7 @@ class Pool:
 
     @classmethod
     async def connect(
-        cls, *, nodes: Iterable[Node], client: discord.Client | None = None, cache_capacity: int | None = None
-    , swap_on_disconnect : bool = False) -> dict[str, Node]:
+        cls, *, nodes: Iterable[Node], client: discord.Client | None = None, cache_capacity: int | None = None) -> dict[str, Node]:
         """Connect the provided Iterable[:class:`Node`] to Lavalink.
 
         Parameters
