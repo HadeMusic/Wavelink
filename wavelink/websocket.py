@@ -155,6 +155,7 @@ class Websocket:
                 aiohttp.WSMsgType.CLOSED,
                 aiohttp.WSMsgType.CLOSING,
             ):
+                self.dispatch('node_disconnect' , self.node)
                 asyncio.create_task(self.connect())
                 break
 

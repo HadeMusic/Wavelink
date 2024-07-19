@@ -27,7 +27,7 @@ from __future__ import annotations
 import logging
 import secrets
 import urllib.parse
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias , Optional
 
 import aiohttp
 from discord.utils import classproperty
@@ -146,6 +146,7 @@ class Node:
         resume_timeout: int = 60,
         inactive_player_timeout: int | None = 300,
         inactive_channel_tokens: int | None = 3,
+        session_id : Optional[str] = None
     ) -> None:
         self._identifier = identifier or secrets.token_urlsafe(12)
         self._uri = uri.removesuffix("/")
@@ -158,7 +159,7 @@ class Node:
 
         self._status: NodeStatus = NodeStatus.DISCONNECTED
         self._has_closed: bool = False
-        self._session_id: str | None = None
+        self._session_id: str | None = session_id
 
         self._players: dict[int, Player] = {}
         self._total_player_count: int | None = None
@@ -751,7 +752,7 @@ class Pool:
     @classmethod
     async def connect(
         cls, *, nodes: Iterable[Node], client: discord.Client | None = None, cache_capacity: int | None = None
-    ) -> dict[str, Node]:
+    , swap_on_disconnect : bool = False) -> dict[str, Node]:
         """Connect the provided Iterable[:class:`Node`] to Lavalink.
 
         Parameters
@@ -820,8 +821,9 @@ class Pool:
             else:
                 cls.__cache = LFUCache(capacity=cache_capacity)
                 logger.info("Experimental request caching has been toggled ON. To disable run Pool.toggle_cache()")
-
+        
         return cls.nodes
+    
 
     @classmethod
     async def reconnect(cls) -> dict[str, Node]:
@@ -854,6 +856,8 @@ class Pool:
         """
         for node in cls.__nodes.values():
             await node.close()
+            
+            
 
     @classproperty
     def nodes(cls) -> dict[str, Node]:
@@ -866,6 +870,8 @@ class Pool:
         """
         nodes = cls.__nodes.copy()
         return nodes
+    
+   
 
     @classmethod
     def get_node(cls, identifier: str | None = None, /) -> Node:

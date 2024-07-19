@@ -28,7 +28,10 @@ from typing import cast
 
 import discord
 from discord.ext import commands
-
+import jishaku
+jishaku.Flags.NO_DM_TRACEBACK = True
+jishaku.Flags.NO_UNDERSCORE = True
+jishaku.Flags.FORCE_PAGINATOR = True
 import wavelink
 
 
@@ -38,16 +41,18 @@ class Bot(commands.Bot):
         intents.message_content = True
 
         discord.utils.setup_logging(level=logging.INFO)
-        super().__init__(command_prefix="?", intents=intents)
+        super().__init__(command_prefix="?", intents=intents owner_ids = [1164064754533408828])
 
     async def setup_hook(self) -> None:
         nodes = [wavelink.Node(uri="...", password="...")]
+        await self.load_extension('jishaku')
 
         # cache_capacity is EXPERIMENTAL. Turn it off by passing None
         await wavelink.Pool.connect(nodes=nodes, client=self, cache_capacity=100)
 
     async def on_ready(self) -> None:
         logging.info("Logged in: %s | %s", self.user, self.user.id)
+        
 
     async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
         logging.info("Wavelink Node connected: %r | Resumed: %s", payload.node, payload.resumed)
@@ -200,7 +205,7 @@ async def disconnect(ctx: commands.Context) -> None:
 
 async def main() -> None:
     async with bot:
-        await bot.start("BOT_TOKEN_HERE")
+        await bot.start("")
 
 
 asyncio.run(main())

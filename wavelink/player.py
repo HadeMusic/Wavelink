@@ -1140,7 +1140,7 @@ class Player(discord.VoiceProtocol):
         if identifier:
             node = wavelink.Pool.get_node(identifier)
         else:   
-            node = wavelink.Pool.get_node() 
+            node = wavelink.Pool.get_node()
             
         if node == self.node:
             raise wavelink.WavelinkException("Node identifiers must not be the same while changing.")
@@ -1179,7 +1179,7 @@ class Player(discord.VoiceProtocol):
         
         self._last_update = time.monotonic_ns()    
         
-        self.client.dispatch('node_change', old , node)
+        self.client.dispatch('node_change',self ,  old , node)
             
         
             
