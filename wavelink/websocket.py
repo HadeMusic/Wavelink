@@ -171,7 +171,7 @@ class Websocket:
 
             data: WebsocketOP = message.json()
 
-            self.dispatch('raw' , data) # this will be helpful for making dashboards easily.
+            self.dispatch('raw_event' , data) # this will be helpful for making dashboards easily.
 
             if data["op"] == "ready":
                 resumed: bool = data["resumed"]
