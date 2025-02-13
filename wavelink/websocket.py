@@ -171,6 +171,8 @@ class Websocket:
 
             data: WebsocketOP = message.json()
 
+            self.dispatch('base_raw_event' , data) # this will be helpful for making dashboards easily.
+
             if data["op"] == "ready":
                 resumed: bool = data["resumed"]
                 session_id: str = data["sessionId"]

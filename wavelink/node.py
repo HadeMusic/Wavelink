@@ -421,8 +421,8 @@ class Node:
 
             return body
 
-    async def _fetch_players(self) -> list[PlayerResponse]:
-        uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players"
+    async def _fetch_players(self , session_id : str | None = None) -> list[PlayerResponse]:
+        uri: str = f"{self.uri}/v4/sessions/{self.session_id if self.session_id is None else session_id}/players"
 
         async with self._session.get(url=uri, headers=self.headers) as resp:
             if resp.status == 200:
@@ -438,7 +438,7 @@ class Node:
 
                 raise LavalinkException(data=exc_data)
 
-    async def fetch_players(self) -> list[PlayerResponsePayload]:
+    async def fetch_players(self , session_id : str | None = None) -> list[PlayerResponsePayload]:
         """Method to fetch the player information Lavalink holds for every connected player on this node.
 
         .. warning::
@@ -463,13 +463,13 @@ class Node:
 
         .. versionadded:: 3.1.0
         """
-        data: list[PlayerResponse] = await self._fetch_players()
+        data: list[PlayerResponse] = await self._fetch_players(session_id=session_id)
 
         payload: list[PlayerResponsePayload] = [PlayerResponsePayload(p) for p in data]
         return payload
 
-    async def _fetch_player(self, guild_id: int, /) -> PlayerResponse:
-        uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players/{guild_id}"
+    async def _fetch_player(self, guild_id: int, / , session_id : str | None = None) -> PlayerResponse:
+        uri: str = f"{self.uri}/v4/sessions/{self.session_id if session_id is None else session_id}/players/{guild_id}"
 
         async with self._session.get(url=uri, headers=self.headers) as resp:
             if resp.status == 200:
@@ -485,7 +485,7 @@ class Node:
 
                 raise LavalinkException(data=exc_data)
 
-    async def fetch_player_info(self, guild_id: int, /) -> PlayerResponsePayload | None:
+    async def fetch_player_info(self, guild_id: int, / , session_id : str | None = None) -> PlayerResponsePayload | None:
         """Method to fetch the player information Lavalink holds for the specific guild.
 
         .. warning::
@@ -517,7 +517,7 @@ class Node:
         .. versionadded:: 3.1.0
         """
         try:
-            data: PlayerResponse = await self._fetch_player(guild_id)
+            data: PlayerResponse = await self._fetch_player(guild_id , session_id=self.session_id if session_id is None else session_id)
         except LavalinkException as e:
             if e.status == 404:
                 return None
@@ -527,10 +527,10 @@ class Node:
         payload: PlayerResponsePayload = PlayerResponsePayload(data)
         return payload
 
-    async def _update_player(self, guild_id: int, /, *, data: Request, replace: bool = False) -> PlayerResponse:
+    async def _update_player(self, guild_id: int, /, *, data: Request, replace: bool = False , session_id : str | None = None) -> PlayerResponse:
         no_replace: bool = not replace
 
-        uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players/{guild_id}?noReplace={no_replace}"
+        uri: str = f"{self.uri}/v4/sessions/{self.session_id if session_id is None else session_id}/players/{guild_id}?noReplace={no_replace}"
 
         async with self._session.patch(url=uri, json=data, headers=self.headers) as resp:
             if resp.status == 200:
@@ -546,8 +546,8 @@ class Node:
 
                 raise LavalinkException(data=exc_data)
 
-    async def _destroy_player(self, guild_id: int, /) -> None:
-        uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players/{guild_id}"
+    async def _destroy_player(self, guild_id: int, /, session_id: str | None = None) -> None:
+        uri: str = f"{self.uri}/v4/sessions/{self.session_id if session_id is None else session_id}/players/{guild_id}"
 
         async with self._session.delete(url=uri, headers=self.headers) as resp:
             if resp.status == 204:
@@ -561,7 +561,7 @@ class Node:
 
             raise LavalinkException(data=exc_data)
 
-    async def _update_session(self, *, data: UpdateSessionRequest) -> UpdateResponse:
+    async def _update_session(self, *, data: UpdateSessionRequest , session_id : str | None = None) -> UpdateResponse:
         uri: str = f"{self.uri}/v4/sessions/{self.session_id}"
 
         async with self._session.patch(url=uri, json=data, headers=self.headers) as resp:
